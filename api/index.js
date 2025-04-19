@@ -1,14 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Place = require('./models/Place');
 const cookieParser = require('cookie-parser');
 const imageDownloader = require('image-downloader')
 const multer = require('multer');
 const fs = require('fs')
+const User = require('./models/User');
+const Place = require('./models/Place');
+const Booking = require('./models/Booking');
 
 require('dotenv').config();
 const app = express();
@@ -114,12 +115,12 @@ app.post('/upload-comp', photosMiddleware.array('photos', 100), async (req, res)
 
 app.post('/places', (req, res) => {
     const { token } = req.cookies;
-    const { title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests,price } = req.body;
+    const { title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price } = req.body;
     jwt.verify(token, jwtSecret, {}, async (err, userData) => {
         if (err) throw err;
         const placeDoc = await Place.create({
             owner: userData.id,
-            title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests,price
+            title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price
         })
         res.json(placeDoc);
     })
@@ -142,13 +143,13 @@ app.get('/places/:id', async (req, res) => {
 
 app.put('/places', async (req, res) => {
     const { token } = req.cookies;
-    const {id,title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests,price } = req.body;
+    const { id, title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price } = req.body;
     jwt.verify(token, jwtSecret, {}, async (err, userData) => {
         const placeDoc = await Place.findById(id);
         if (err) throw err;
-        if(userData.id === placeDoc.owner.toString()){
+        if (userData.id === placeDoc.owner.toString()) {
             placeDoc.set({
-                title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests,price
+                title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price
             })
             await placeDoc.save();
             res.json("ok");
@@ -160,6 +161,53 @@ app.get('/places', async (req, res) => {
     res.json(await Place.find());
 })
 
-app
+app.post('/bookings', async (req, res) => {
+    const { token } = req.cookies;
+    const { place,price, checkIn, checkOut, numberOfGuests, name, phone } = req.body;
+    jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+        if (err) throw err;
+        Booking.create({
+            user: userData.id,
+            place,
+            price,
+            checkIn,
+            checkOut,
+            numberOfGuests,
+            name,
+            phone
+        }).then((bookingDoc) => {
+            res.json(bookingDoc);
+        }).catch((err) => {
+            console.error(err);
+            res.status(500).json({ error: 'Internal server error' });
+        });
+    })
+})
 
-app.listen(4000);
+function getUserDataFromToken(req) {
+    return new Promise((resolve, reject) => {
+        const { token } = req.cookies;
+        jwt.verify(token, jwtSecret, {}, (err, userData) => {
+            if (err) return reject(err);
+            resolve(userData);
+        });
+    });
+}
+
+app.get('/bookings', async (req, res) => {
+    await getUserDataFromToken(req).then(userData => {
+        Booking.find({ user: userData.id }).populate('place').then(bookingDocs => {
+            res.json(bookingDocs);
+        }).catch(err => {
+            console.error(err);
+            res.status(500).json({ error: 'Internal server error' });
+        });
+    }).catch(err => {
+        console.error(err);
+        res.status(401).json({ error: 'Unauthorized' });
+    });
+
+
+})
+
+    app.listen(4000);
