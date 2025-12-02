@@ -19,7 +19,7 @@ const jwtSecret = 'dfkbcbsdjkansdjkasjnxcacjnaj';
 
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static('/Users/Dibyanshu/Desktop/MU/Sem 4/AWT/lab/react/airbnb-clone/api/uploads'));
+app.use('/uploads', express.static('uploads'));
 
 app.use(cors({
     credentials: true,
@@ -27,7 +27,25 @@ app.use(cors({
 }
 ));
 
-mongoose.connect(process.env.MONGO_URL);
+const uri = process.env.MONGO_URl;
+if (!uri) {
+  console.error('MONGODB_URI not set');
+  process.exit(1);
+}
+
+mongoose.set('strictQuery', true); // optional
+mongoose.connect(uri, {
+  serverSelectionTimeoutMS: 10000, // 10s
+})
+.then(() => console.log('Connected to MongoDB Atlas'))
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1);
+});
+
+mongoose.connection.on('error', err => {
+  console.error('Mongoose connection error event:', err);
+});
 
 app.get("/test", (req, res) => {
     res.json('Test ok');
@@ -94,7 +112,7 @@ app.post('/upload', async (req, res) => {
     const newName = 'photo' + Date.now() + '.jpg'
     await imageDownloader.image({
         url: link,
-        dest: '/Users/Dibyanshu/Desktop/MU/Sem 4/AWT/lab/react/airbnb-clone/api/uploads/' + newName,
+        dest: './uploads/' + newName,
     })
     res.json(newName);
 })
@@ -210,4 +228,13 @@ app.get('/bookings', async (req, res) => {
 
 })
 
-    app.listen(4000);
+const path = require('path');
+
+if(process.env.NODE_ENV === 'production'){
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  });
+}
+
+app.listen(process.env.PORT);

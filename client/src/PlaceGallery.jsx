@@ -1,7 +1,11 @@
 import { useState } from "react";
+import PropTypes from 'prop-types';
 
-export default function PlaceGallery({ place }) {
+export default function PlaceGallery( {place} ) {
     const [showAllPhotos, setShowAllPhotos] = useState(false);
+    
+    if (!place) return <div>Loading photos...</div>;
+    
     if (showAllPhotos) {
         return (
             <div className="mt-6 flex flex-col gap-4">
@@ -66,3 +70,10 @@ export default function PlaceGallery({ place }) {
         </div>
     )
 }
+
+PlaceGallery.propTypes = {
+    place: PropTypes.shape({
+        title: PropTypes.string,
+        addedPhotos: PropTypes.arrayOf(PropTypes.string)
+    })
+};

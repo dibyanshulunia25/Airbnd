@@ -38,7 +38,6 @@ import PlaceGallery from "../PlaceGallery";
 export default function IndividualPage() {
     const { id } = useParams();
     const [place, setPlace] = useState(null);
-    const [showAllPhotos, setShowAllPhotos] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -48,12 +47,12 @@ export default function IndividualPage() {
     }, [id]);
 
     if (!place) return <div>Loading...</div>;
-  
+
 
     return (
         <div className="mt-8 py-5 border-t-2 border-opacity-5 px-2 lg:px-5 bg-opacity-10 bg-slate-300" >
             {/* Photo Gallery */}
-           <PlaceGallery place={place} />
+            <PlaceGallery place={place} />
             {/* Title and Address */}
             <div className="mt-6">
                 <h1 className="text-3xl font-bold">{place.title}</h1>
@@ -90,7 +89,7 @@ export default function IndividualPage() {
                 </ul>
             </div>
 
-         <BookingWidget place={place} />
+            <BookingWidget place={place} />
             {/* Additional Information */}
             <div className="mt-6 text-justify">
                 <h2 className="text-2xl font-semibold">Additional Information</h2>
