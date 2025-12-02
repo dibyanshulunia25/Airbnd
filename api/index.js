@@ -21,11 +21,29 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static('uploads'));
 
-app.use(cors({
-    credentials: true,
-    origin: "http://localhost:5173",
-}
-));
+// Read allowed origins from environment, falling back to common dev origin(s)
+const allowedOrigins = [
+  'http://localhost:5173',            // Vite dev client (local dev)
+  'http://localhost:4000',            // if you call from this origin in dev
+  process.env.FRONTEND_URL || 'https://airbnd-0ycg.onrender.com' // production frontend
+].filter(Boolean);
+
+// CORS options that echo back the origin only if it's in the whitelist
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS: ' + origin));
+  },
+  credentials: true, // allow cookies / Authorization header if needed
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 
 const uri = process.env.MONGO_URL;
 if (!uri) {
