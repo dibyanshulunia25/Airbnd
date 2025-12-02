@@ -27,7 +27,7 @@ app.use(cors({
 }
 ));
 
-const uri = process.env.MONGO_URl;
+const uri = process.env.MONGO_URL;
 if (!uri) {
   console.error('MONGODB_URI not set');
   process.exit(1);
